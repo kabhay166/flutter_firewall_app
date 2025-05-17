@@ -202,7 +202,7 @@ class _MyHomePageState extends State<MyHomePage> {
                              Workmanager().registerPeriodicTask('KeepAliveTask',
         
                                  'KeepAliveTask',frequency: Duration(minutes: _authenticator.getKeepAliveMinutes()),
-                                 inputData: {'magicValue':_authenticator.getMagicValue(),
+                                 inputData: {'keepAliveToken':_authenticator.getKeepAliveToken(),
                                    'keepAliveUrl':_authenticator.getKeepAliveUrl()},
                                  existingWorkPolicy: ExistingWorkPolicy.replace);
         

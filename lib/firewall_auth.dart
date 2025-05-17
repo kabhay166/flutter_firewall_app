@@ -12,21 +12,30 @@ class Authenticator {
 
   String _username;
   String _password;
-  final _keepAliveMinutes = 25;
+  final _keepAliveMinutes = 16;
   final _logoutUrl = "https://gateway.iitk.ac.in:1003/logout";
   final _loginUrl = "https://gateway.iitk.ac.in:1003/login?";
-  final _keepAliveUrl = "https://gateway.iitk.ac.in:1003/keepalive";
-  String _magicValue = "";
+  final _keepAliveUrl = "https://gateway.iitk.ac.in:1003/keepalive?";
+  String? _keepAliveToken = "";
 
   Authenticator(this._username,this._password);
 
 
 
   Future<bool> login() async{
+    http.Response loginPageResponse;
+    try {
+      loginPageResponse = await http.get(
+        Uri.parse(_loginUrl),
+      );
+    } on SocketException catch (e) {
+      return false;
+    } on http.ClientException catch (e) {
+      return false;
+    } on Exception catch (e) {
+      return false;
+    }
 
-    final loginPageResponse = await http.get(
-      Uri.parse(_loginUrl),
-    );
 
     final html = loginPageResponse.body;
 
@@ -38,12 +47,12 @@ class Authenticator {
       return false;
     }
 
-    _magicValue = magic;
+
 
     Map<String,String> data = {
       'username':_username,
       'password':_password,
-      'magic': _magicValue,
+      'magic': magic,
       '4Tredir': '/',
     };
 
@@ -58,12 +67,81 @@ class Authenticator {
         body: data,
       );
       // print('Status: ${response.statusCode}');
-      // print('Body: ${response.body}');
+       print('Login response Body: ${response.body}');
+
+      print('Login successfull with magic value = $magic now trying keepalive');
+
+      _keepAliveToken = RegExp(r"keepalive\?([a-zA-Z0-9]+)").firstMatch(response.body)?.group(1);
+
+      if(_keepAliveToken == null) {
+        return false;
+      }
+
+      print('keep alive token is: $_keepAliveToken');
+      String retryUrl = '$_keepAliveUrl$_keepAliveToken)';
+
       return true;
 
-    } catch (e) {
+    } on SocketException catch (e) {
+      print(e);
+      return false;
+    } on http.ClientException catch (e) {
+      print(e);
+      return false;
+    } on Exception catch (e) {
+      print(e);
       return false;
     }
+  }
+
+
+
+
+
+  static FutureOr<void> keepAlive( Map<String,dynamic> inputData) async  {
+
+    print('[WorkManager]: Inside keep alive function');
+    final prefs = await SharedPreferences.getInstance();
+    final timesKeptAlive = prefs.getInt('timesKeptAlive') ?? 0;
+
+    if(timesKeptAlive == 40) {
+      print('Cancelling task from timesKeptAlive variable');
+      await Workmanager().cancelByUniqueName('KeepAliveTask');
+      return;
+    }
+
+    String keepAliveUrl = inputData['keepAliveUrl'];
+    String keepAliveToken = inputData['keepAliveToken'];
+
+    String retryUrl = '$keepAliveUrl$keepAliveToken';
+    http.Response response;
+
+
+      try {
+        print('Trying the url: $retryUrl');
+        response = await http.get(Uri.parse(retryUrl),headers:{"User-Agent": "Mozilla/5.0","Connection": "keep-alive", "Accept": "*/*",});
+        print(response.body);
+
+        if(response.statusCode == 200){
+          await prefs.setInt('timesKeptAlive',timesKeptAlive+1);
+
+
+        } else {
+          print('response code is not 200. canceling task');
+          await prefs.setInt('timesKeptAlive',0);
+          await Workmanager().cancelByUniqueName('KeepAliveTask');
+
+
+        }
+
+
+      } on Exception catch (e) {
+        print('Exception occurred cancelling the task. Exception is: ${e.toString()}');
+        await Workmanager().cancelByUniqueName('KeepAliveTask');
+
+      }
+
+
   }
 
 
@@ -96,46 +174,6 @@ class Authenticator {
 
   }
 
-
-  static FutureOr<void> keepAlive( Map<String,dynamic> inputData) async  {
-
-    print('[WorkManager]: Inside keep alive function');
-    final prefs = await SharedPreferences.getInstance();
-    final timesKeptAlive = prefs.getInt('timesKeptAlive') ?? 0;
-
-    if(timesKeptAlive == 40) {
-      await Workmanager().cancelByUniqueName('KeepAliveTask');
-      return;
-    }
-
-    String keepAliveUrl = inputData['keepAliveUrl'];
-    String magicValue = inputData['magicValue'];
-    http.Response response;
-    while(true) {
-
-      try {
-        response = await http.get(Uri.parse('$keepAliveUrl?$magicValue'));
-      } on Exception catch (e) {
-        await Workmanager().cancelByUniqueName('KeepAliveTask');
-        break;
-      }
-
-      if(response.statusCode == 200){
-        await prefs.setInt('timesKeptAlive',timesKeptAlive+1);
-        break;
-
-      } else {
-        await prefs.setInt('timesKeptAlive',0);
-        await Workmanager().cancelByUniqueName('KeepAliveTask');
-
-        break;
-      }
-
-
-    }
-
-  }
-
   void setCredentials(String username, String password) {
     this._username = username;
     this._password = password;
@@ -154,8 +192,8 @@ class Authenticator {
     return _keepAliveMinutes;
   }
 
-  String getMagicValue() {
-    return _magicValue;
+  String getKeepAliveToken() {
+    return _keepAliveToken ?? "";
   }
 
   String getKeepAliveUrl() {
