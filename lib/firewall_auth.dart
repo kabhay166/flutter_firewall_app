@@ -28,9 +28,9 @@ class Authenticator {
       loginPageResponse = await http.get(
         Uri.parse(_loginUrl),
       );
-    } on SocketException catch (e) {
+    } on SocketException {
       return (false, "You are not connected to IITK Network.");
-    } on http.ClientException catch (e) {
+    } on http.ClientException {
       return (false, "Could not log in");
     } on Exception catch (e) {
       return (false, "Eror occured: $e");
@@ -77,11 +77,11 @@ class Authenticator {
 
       return (true,null);
 
-    } on SocketException catch (e) {
-      print(e);
+    } on SocketException {
+
       return (false, "You are not connected to IITK Network");
     } on Exception catch (e) {
-      print(e);
+
       return (false,"Error occured: $e");
     }
 
@@ -93,12 +93,10 @@ class Authenticator {
 
   static FutureOr<void> keepAlive( Map<String,dynamic> inputData) async  {
 
-    print('[WorkManager]: Inside keep alive function');
     final prefs = await SharedPreferences.getInstance();
     final timesKeptAlive = prefs.getInt('timesKeptAlive') ?? 0;
 
     if(timesKeptAlive == 40) {
-      print('Cancelling task from timesKeptAlive variable');
       await Workmanager().cancelByUniqueName('KeepAliveTask');
       return;
     }
@@ -111,16 +109,14 @@ class Authenticator {
 
 
       try {
-        print('Trying the url: $retryUrl');
+
         response = await http.get(Uri.parse(retryUrl),headers:{"User-Agent": "Mozilla/5.0","Connection": "keep-alive", "Accept": "*/*",});
-        print(response.body);
 
         if(response.statusCode == 200){
           await prefs.setInt('timesKeptAlive',timesKeptAlive+1);
 
 
         } else {
-          print('response code is not 200. canceling task');
           await prefs.setInt('timesKeptAlive',0);
           await Workmanager().cancelByUniqueName('KeepAliveTask');
 
@@ -128,8 +124,7 @@ class Authenticator {
         }
 
 
-      } on Exception catch (e) {
-        print('Exception occurred cancelling the task. Exception is: ${e.toString()}');
+      } on Exception {
         await Workmanager().cancelByUniqueName('KeepAliveTask');
 
       }
@@ -146,8 +141,7 @@ class Authenticator {
       } else {
         return false;
       }
-    } on Exception catch (e) {
-      print('Exception occured: $e');
+    } on Exception {
       return false;
     }
   }
@@ -174,7 +168,7 @@ class Authenticator {
       return false;
     }
 
-    on SocketException catch(e) {
+    on SocketException {
       return false;
 
     }
