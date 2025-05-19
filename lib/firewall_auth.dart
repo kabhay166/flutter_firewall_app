@@ -12,7 +12,7 @@ class Authenticator {
 
   String _username;
   String _password;
-  final _keepAliveMinutes = 16;
+  final _keepAliveMinutes = 25;
   final _logoutUrl = "https://gateway.iitk.ac.in:1003/logout";
   final _loginUrl = "https://gateway.iitk.ac.in:1003/login?";
   final _keepAliveUrl = "https://gateway.iitk.ac.in:1003/keepalive?";
@@ -22,18 +22,18 @@ class Authenticator {
 
 
 
-  Future<bool> login() async{
+  Future<(bool,String?)> login() async{
     http.Response loginPageResponse;
     try {
       loginPageResponse = await http.get(
         Uri.parse(_loginUrl),
       );
     } on SocketException catch (e) {
-      return false;
+      return (false, "You are not connected to IITK Network.");
     } on http.ClientException catch (e) {
-      return false;
+      return (false, "Could not log in");
     } on Exception catch (e) {
-      return false;
+      return (false, "Eror occured: $e");
     }
 
 
@@ -44,7 +44,7 @@ class Authenticator {
     final redir = RegExp(r'name="4Tredir" value="([^"]+)"').firstMatch(html)?.group(1);
 
     if (magic == null || redir == null) {
-      return false;
+      return (false, "Could not find login parameters");
     }
 
 
@@ -66,32 +66,25 @@ class Authenticator {
         },
         body: data,
       );
-      // print('Status: ${response.statusCode}');
-       print('Login response Body: ${response.body}');
 
-      print('Login successfull with magic value = $magic now trying keepalive');
 
       _keepAliveToken = RegExp(r"keepalive\?([a-zA-Z0-9]+)").firstMatch(response.body)?.group(1);
 
       if(_keepAliveToken == null) {
-        return false;
+        return (false, "Failed to login with these credentials. Please check username and password");
       }
+      
 
-      print('keep alive token is: $_keepAliveToken');
-      String retryUrl = '$_keepAliveUrl$_keepAliveToken)';
-
-      return true;
+      return (true,null);
 
     } on SocketException catch (e) {
       print(e);
-      return false;
-    } on http.ClientException catch (e) {
-      print(e);
-      return false;
+      return (false, "You are not connected to IITK Network");
     } on Exception catch (e) {
       print(e);
-      return false;
+      return (false,"Error occured: $e");
     }
+
   }
 
 
@@ -144,6 +137,20 @@ class Authenticator {
 
   }
 
+  
+  Future<bool> checkState() async {
+    try {
+      http.Response? response = await http.get(Uri.parse(_loginUrl));
+      if(response.statusCode == 200) {
+        return true;
+      } else {
+        return false;
+      }
+    } on Exception catch (e) {
+      print('Exception occured: $e');
+      return false;
+    }
+  }
 
   Future<bool> logout() async{
 

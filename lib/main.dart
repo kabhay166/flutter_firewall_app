@@ -1,11 +1,8 @@
-import 'dart:math';
-
 import 'package:flutter/material.dart';
 import 'package:firewall_app/firewall_auth.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'secure_storage.dart';
 import 'package:workmanager/workmanager.dart';
-import 'package:http/http.dart' as http;
 
 
 void main() async {
@@ -21,7 +18,7 @@ void callbackDispatcher() {
   Workmanager().executeTask( (task,inputData) async {
 
     if(task == 'KeepAliveTask') {
-      print('Executing KeepAliveTask');
+
       await Authenticator.keepAlive(inputData!);
 
     }
@@ -47,7 +44,7 @@ class MyApp extends StatelessWidget {
 
         colorScheme: ColorScheme.fromSeed(seedColor: Colors.deepPurple),
       ),
-      home: const MyHomePage(title: 'Login to IITK Wifi'),
+      home: const MyHomePage(title: 'Login to IITK Firewall'),
     );
   }
 }
@@ -66,8 +63,8 @@ class MyHomePage extends StatefulWidget {
 
 class _MyHomePageState extends State<MyHomePage> {
 
-  final IITK_USERNAME = "IITK_USERNAME";
-  final IITK_PASSWORD = "IITK_PASSWORD";
+  final  IITK_USERNAME = "IITK_USERNAME";
+  final  IITK_PASSWORD = "IITK_PASSWORD";
   final TextEditingController _usernameController = TextEditingController();
   final TextEditingController _passwordController = TextEditingController();
   late Authenticator _authenticator;
@@ -92,7 +89,7 @@ class _MyHomePageState extends State<MyHomePage> {
       final prefs = await SharedPreferences.getInstance();
       bool rememberCredentials = prefs.getBool('rememberCredentials') ?? false;
 
-      print('iitkusername: $iitkUsername, iitkpassword: $iitkPassword');
+
       setState(()  {
           _username = iitkUsername;
           _password = iitkPassword;
@@ -177,7 +174,6 @@ class _MyHomePageState extends State<MyHomePage> {
         
                       onPressed: () async {
         
-        
                               _username = _usernameController.text;
                               _password = _passwordController.text;
                               if(_username == "" || _password == "") {
@@ -187,8 +183,13 @@ class _MyHomePageState extends State<MyHomePage> {
                               }
         
                               _authenticator.setCredentials(_username, _password);
-
-                           bool loginStatus = await _authenticator.login();
+                              
+                            bool connectedToIITK = await _authenticator.checkState();
+                            if(!connectedToIITK) {
+                              showMessage("You are not connected to IITK network.");
+                              return;
+                            }
+                           var (loginStatus, loginError) = await _authenticator.login();
         
                            if(loginStatus) {
         
@@ -207,7 +208,7 @@ class _MyHomePageState extends State<MyHomePage> {
                                  existingWorkPolicy: ExistingWorkPolicy.replace);
         
                            } else {
-                             showMessage('An error occured while logging in.');
+                             showMessage(loginError!);
         
                            }
         
@@ -221,9 +222,27 @@ class _MyHomePageState extends State<MyHomePage> {
         
                     ),
         
-                  (_username != "" && _password != "")
-                      ? ElevatedButton(onPressed: () { removeUserSettings();}, child: Text('Forget username and password'))
-                      : SizedBox.shrink(),
+                  // (_username != "" && _password != "")
+                  //     ? ElevatedButton(onPressed: () { removeUserSettings();}, child: Text('Forget username and password'))
+                  //     : SizedBox.shrink(),
+
+                  _rememberMe ? ElevatedButton(onPressed: () { removeUserSettings();}, child: Text('Forget username and password'))
+                              : Center(
+                    child: Row(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+
+                        Checkbox(value: _rememberMe, onChanged: (bool? value) {
+                          setState(() {
+                            _rememberMe = value!;
+                          });
+                        }),
+
+
+                        Text('Remember username and password'),
+                      ],
+                    ),
+                  ),
         
                 ],
               ),
@@ -277,23 +296,23 @@ class _MyHomePageState extends State<MyHomePage> {
            ),
 
 
-           !_rememberMe ?
-           Center(
-             child: Row(
-               mainAxisAlignment: MainAxisAlignment.center,
-               children: [
-
-                 Checkbox(value: _rememberMe, onChanged: (bool? value) {
-                   setState(() {
-                     _rememberMe = value!;
-                   });
-                 }),
-
-
-                 Text('Remember username and password'),
-               ],
-             ),
-           ) : SizedBox.shrink(),
+           // !_rememberMe ?
+           // Center(
+           //   child: Row(
+           //     mainAxisAlignment: MainAxisAlignment.center,
+           //     children: [
+           //
+           //       Checkbox(value: _rememberMe, onChanged: (bool? value) {
+           //         setState(() {
+           //           _rememberMe = value!;
+           //         });
+           //       }),
+           //
+           //
+           //       Text('Remember username and password'),
+           //     ],
+           //   ),
+           // ) : SizedBox.shrink(),
 
          ],
        ),
