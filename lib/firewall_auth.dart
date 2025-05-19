@@ -175,8 +175,8 @@ class Authenticator {
   }
 
   void setCredentials(String username, String password) {
-    this._username = username;
-    this._password = password;
+    _username = username;
+    _password = password;
   }
 
 
