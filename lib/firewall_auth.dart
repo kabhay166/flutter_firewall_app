@@ -57,9 +57,8 @@ class Authenticator {
         },
         body: data,
       );
-      // print('Status: ${response.statusCode}');
-      // print('Body: ${response.body}');
-      return true;
+
+      return response.statusCode == 200 ? true : false;
 
     } catch (e) {
       return false;
@@ -89,7 +88,7 @@ class Authenticator {
       return false;
     }
 
-    on SocketException catch(e) {
+    on SocketException  {
       return false;
 
     }
@@ -115,7 +114,7 @@ class Authenticator {
 
       try {
         response = await http.get(Uri.parse('$keepAliveUrl?$magicValue'));
-      } on Exception catch (e) {
+      } on Exception {
         await Workmanager().cancelByUniqueName('KeepAliveTask');
         break;
       }
@@ -137,8 +136,8 @@ class Authenticator {
   }
 
   void setCredentials(String username, String password) {
-    this._username = username;
-    this._password = password;
+    _username = username;
+    _password = password;
   }
 
 

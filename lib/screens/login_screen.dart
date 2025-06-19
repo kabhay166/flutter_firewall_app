@@ -2,6 +2,7 @@ import 'package:firewall_app/firewall_auth.dart';
 import 'package:firewall_app/utility/user_settings_manager.dart';
 import 'package:firewall_app/widgets/show_message.dart';
 import 'package:flutter/material.dart';
+import 'package:go_router/go_router.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:workmanager/workmanager.dart';
 
@@ -133,7 +134,7 @@ class _LoginScreenState extends State<LoginScreen> {
                           'keepAliveUrl':_authenticator.getKeepAliveUrl()},
                         existingWorkPolicy: ExistingWorkPolicy.replace);
                     if(!mounted) return;
-                    Navigator.pushNamed(context,'successPage');
+                    context.push('/successPage');
                   } else {
                     if(!mounted) return;
                     showMessage(context, 'An error occurred while logging in.');
