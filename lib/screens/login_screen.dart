@@ -1,4 +1,4 @@
-import 'package:firewall_app/firewall_auth.dart';
+import 'package:firewall_app/utility/firewall_auth.dart';
 import 'package:firewall_app/utility/user_settings_manager.dart';
 import 'package:firewall_app/widgets/show_message.dart';
 import 'package:flutter/material.dart';
@@ -118,7 +118,12 @@ class _LoginScreenState extends State<LoginScreen> {
 
                   _authenticator.setCredentials(_username, _password);
 
-                  bool loginStatus = await _authenticator.login();
+                  bool connectedToIITK = await _authenticator.checkState();
+                  if(!connectedToIITK) {
+                    showMessage(context,"You are not connected to IITK network.");
+                    return;
+                  }
+                  var (loginStatus,loginError) = await _authenticator.login();
 
                   if(loginStatus) {
 
@@ -130,8 +135,7 @@ class _LoginScreenState extends State<LoginScreen> {
                     Workmanager().registerPeriodicTask('KeepAliveTask',
 
                         'KeepAliveTask',frequency: Duration(minutes: _authenticator.getKeepAliveMinutes()),
-                        inputData: {'magicValue':_authenticator.getMagicValue(),
-                          'keepAliveUrl':_authenticator.getKeepAliveUrl()},
+                        inputData: {'keepAliveToken':_authenticator.getKeepAliveToken()},
                         existingWorkPolicy: ExistingWorkPolicy.replace);
                     if(!mounted) return;
                     context.push('/successPage');

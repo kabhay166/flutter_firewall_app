@@ -1,4 +1,4 @@
-import 'package:firewall_app/secure_storage.dart';
+import 'package:firewall_app/utility/secure_storage.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 class UserSettingsManager {

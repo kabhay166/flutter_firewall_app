@@ -1,7 +1,7 @@
 import 'package:firewall_app/screens/login_screen.dart';
 import 'package:firewall_app/screens/success_screen.dart';
 import 'package:flutter/material.dart';
-import 'package:firewall_app/firewall_auth.dart';
+import 'package:firewall_app/utility/firewall_auth.dart';
 import 'package:go_router/go_router.dart';
 import 'package:workmanager/workmanager.dart';
 
@@ -20,6 +20,10 @@ void callbackDispatcher() {
     if(task == 'KeepAliveTask') {
       await Authenticator.keepAlive(inputData!);
 
+    }
+
+    if(task == 'loginTask') {
+      await Authenticator.loginTask();
     }
     return Future.value(true);
   });
